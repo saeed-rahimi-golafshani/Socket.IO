@@ -1,5 +1,6 @@
 const redisClient = require("../Utills/Init.Redis");
 const { HomeRoutes } = require("./Api/Home.Routes");
+const { SupportSectionRouter } = require("./Supports/Support.Router");
 const router = require("express").Router();
 (async() =>{
     await redisClient.set("key", "value")
@@ -8,6 +9,7 @@ const router = require("express").Router();
 })();
 
     router.use("/", HomeRoutes)
+    router.use("/support", SupportSectionRouter)
 
 module.exports = {
     AllRoutes: router

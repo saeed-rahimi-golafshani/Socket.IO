@@ -6,6 +6,8 @@ const { default: mongoose } = require("mongoose");
 const http = require("http");
 const createHttpError = require("http-errors");
 const { AllRoutes } = require("./Routers/Router");
+const ejs = require("ejs");
+const expressEjsLayouts = require("express-ejs-layouts");
 
 module.exports = class Application{
     #app = express();
@@ -15,10 +17,12 @@ module.exports = class Application{
         this.#PORT = port;
         this.#DB_URL = dbUrl;
         this.configApplication();
+        this.initRedis();
+        this.initTemplateEngin();
         this.connectToMongoDb();
         this.configserver();
         this.createRoutes();
-        this.errorHandller();
+        this.errorHandller();  
     }
     configApplication(){
         this.#app.use(express.json());
@@ -26,6 +30,21 @@ module.exports = class Application{
         this.#app.use(express.static(path.join(__dirname, "..", "Public")));
         this.#app.use(cors());
         this.#app.use(morgan("dev"));
+    }
+    initRedis(){
+        require("./Utills/Init.Redis")
+    }
+    initTemplateEngin(){
+        this.#app.use(expressEjsLayouts);
+        this.#app.set("view engine", "ejs");
+        this.#app.set("views", "Resource/Views");
+        this.#app.set("layout extractStyles", true);
+        this.#app.set("layout extractScript", true);
+        this.#app.set("layout", "./Layouts/Master");
+        // this.#app.use((req, res, next) => {
+            // this.#app.locals = clientHelper(req, res);
+            // next()
+        //   })
     }
     connectToMongoDb(){
         mongoose.set('strictQuery', 'false')
@@ -43,19 +62,21 @@ module.exports = class Application{
         this.#app.use(AllRoutes)
     }
     errorHandller(){
-        this.#app.use((req, res, next) => {
-            next(createHttpError.NotFound("آدرس صفحه مورد نظر یافت نشد"))
-        });
-        this.#app.use((error, req, res, next) =>{
-            const servererror = createHttpError.InternalServerError;
-            const statusCode = error?.status || servererror.status;
-            const message = error?.message || servererror.message;
+        this.#app.use((req, res, next) =>{
+            next(createError.NotFound("آدرس صفحه مورد نظر یافت نشد"))
+        })
+        
+        this.#app.use((error, req, res, next) => {
+            const servererror = createHttpError.InternalServerError();
+            const statusCode = error?.status || servererror.status ;
+            const message = error?.message || servererror.message
             return res.status(statusCode).send({
-                errors: {
+                errors : {
                     statusCode,
                     message
                 }
             })
         })
     }
-}
+    
+    }
