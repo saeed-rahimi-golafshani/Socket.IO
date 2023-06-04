@@ -7,6 +7,8 @@ const http = require("http");
 const createHttpError = require("http-errors");
 const { AllRoutes } = require("./Routers/Router");
 const ejs = require("ejs");
+const swaggerUI = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
 const expressEjsLayouts = require("express-ejs-layouts");
 
 module.exports = class Application{
@@ -30,6 +32,45 @@ module.exports = class Application{
         this.#app.use(express.static(path.join(__dirname, "..", "Public")));
         this.#app.use(cors());
         this.#app.use(morgan("dev"));
+        this.#app.use(
+            "/api-doc",
+            swaggerUI.serve,
+            swaggerUI.setup(
+              swaggerJsDoc({
+                swaggerDefinition: {
+                  openapi: "3.0.0",
+                  info: {
+                    title: "SocketIo ChatBot",
+                    version: "2.0.0",
+                    description:
+                      "چت باکس",
+                    contact: {
+                      name: "saeed rahimi",
+                      email: "saeedrahimigolafshani@gmail.com",
+                    },
+                  },
+                  servers: [
+                    {
+                      url: "http://localhost:3030",
+                    },
+                  ],
+                  components : {
+                    securitySchemes : {
+                      BearerAuth : {
+                        type: "http",
+                        scheme: "bearer",
+                        bearerFormat: "JWT",
+                        
+                      }
+                    }
+                  },
+                  security : [{BearerAuth : [] }]
+                },
+                apis: ["./App/Routers/**/*.js"],
+              }),
+              {explorer: true},
+            )
+          );
     }
     initRedis(){
         require("./Utills/Init.Redis")
@@ -63,7 +104,7 @@ module.exports = class Application{
     }
     errorHandller(){
         this.#app.use((req, res, next) =>{
-            next(createError.NotFound("آدرس صفحه مورد نظر یافت نشد"))
+            next(createHttpError.NotFound("آدرس صفحه مورد نظر یافت نشد"))
         })
         
         this.#app.use((error, req, res, next) => {
