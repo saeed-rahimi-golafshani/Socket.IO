@@ -6,10 +6,12 @@ const { default: mongoose } = require("mongoose");
 const http = require("http");
 const createHttpError = require("http-errors");
 const { AllRoutes } = require("./Routers/Router");
-const ejs = require("ejs");
 const swaggerUI = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
 const expressEjsLayouts = require("express-ejs-layouts");
+const { initialSocket } = require("./Utills/InitSocket");
+const { socketHandler } = require("./Socket.Io/Index");
+
 
 module.exports = class Application{
     #app = express();
@@ -95,7 +97,10 @@ module.exports = class Application{
 })
     }
     configserver(){
-        http.createServer(this.#app).listen(this.#PORT, () => {
+        const server = http.createServer(this.#app);
+        const io = initialSocket(server);
+        socketHandler(io);
+        server.listen(this.#PORT, () => {
             console.log(`server run on port http://localhost:${this.#PORT}`);
         })
     }
